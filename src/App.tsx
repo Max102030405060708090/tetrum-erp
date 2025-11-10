@@ -32,17 +32,19 @@ import { ControleCaixaPage } from './components/ControleCaixaPage';
 import { ProductDetailPage } from './components/ProductDetailPage';
 
 export default function App() {
-  // Bypass login when path is /manager (or ends with it)
-  const initialPage =
-    typeof window !== 'undefined' &&
-    (window.location.pathname.toLowerCase() === '/manager' ||
-      window.location.pathname.toLowerCase().endsWith('/manager'))
-      ? 'dashboard'
-      : 'login';
-  const [currentPage, setCurrentPage] = useState(initialPage);
+  // Inicia direto no dashboard por padrão
+  const [currentPage, setCurrentPage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+
+  // Verifica a URL para mostrar login se necessário
+  useEffect(() => {
+    const path = window.location.pathname.toLowerCase();
+    if (path === '/login' || path.endsWith('/login')) {
+      setCurrentPage('login');
+    }
+  }, []);
 
   useEffect(() => {
     if (darkMode) {
