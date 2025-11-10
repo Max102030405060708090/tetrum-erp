@@ -31,19 +31,125 @@ import { RemessasPage } from './components/RemessasPage';
 import { ControleCaixaPage } from './components/ControleCaixaPage';
 import { ProductDetailPage } from './components/ProductDetailPage';
 
+// Mapeamento de rotas (URL -> página)
+const routeMap: Record<string, string> = {
+  '/': 'dashboard',
+  '/dashboard': 'dashboard',
+  '/vendas': 'vendas',
+  '/compras': 'compras',
+  '/estoque': 'estoque',
+  '/produtos': 'produtos',
+  '/financeiro': 'financeiro',
+  '/relatorios': 'relatorios',
+  '/configuracoes': 'configuracoes',
+  '/metricas': 'metricas',
+  '/cadastros': 'cadastros',
+  '/comercial': 'comercial',
+  '/curva-abc': 'curva-abc',
+  '/categoria-produtos': 'categoria-produtos',
+  '/clientes-fornecedores': 'clientes-fornecedores',
+  '/funcionarios': 'funcionarios',
+  '/tributos-padrao': 'tributos-padrao',
+  '/lancamentos': 'lancamentos',
+  '/pedidos-compra': 'pedidos-compra',
+  '/pedidos-venda': 'pedidos-venda',
+  '/nf-entrada': 'nf-entrada',
+  '/nf-saida': 'nf-saida',
+  '/frente-caixa': 'frente-caixa',
+  '/caixa-bancos': 'caixa-bancos',
+  '/contas-pagar': 'contas-pagar',
+  '/contas-receber': 'contas-receber',
+  '/remessas': 'remessas',
+  '/controle-caixa': 'controle-caixa',
+  '/login': 'login',
+};
+
+// Mapeamento reverso (página -> URL)
+const pageToRoute: Record<string, string> = {
+  'dashboard': '/dashboard',
+  'vendas': '/vendas',
+  'compras': '/compras',
+  'estoque': '/estoque',
+  'produtos': '/produtos',
+  'financeiro': '/financeiro',
+  'relatorios': '/relatorios',
+  'configuracoes': '/configuracoes',
+  'metricas': '/metricas',
+  'cadastros': '/cadastros',
+  'comercial': '/comercial',
+  'curva-abc': '/curva-abc',
+  'categoria-produtos': '/categoria-produtos',
+  'clientes-fornecedores': '/clientes-fornecedores',
+  'funcionarios': '/funcionarios',
+  'tributos-padrao': '/tributos-padrao',
+  'lancamentos': '/lancamentos',
+  'pedidos-compra': '/pedidos-compra',
+  'pedidos-venda': '/pedidos-venda',
+  'nf-entrada': '/nf-entrada',
+  'nf-saida': '/nf-saida',
+  'frente-caixa': '/frente-caixa',
+  'caixa-bancos': '/caixa-bancos',
+  'contas-pagar': '/contas-pagar',
+  'contas-receber': '/contas-receber',
+  'remessas': '/remessas',
+  'controle-caixa': '/controle-caixa',
+  'login': '/login',
+};
+
+// Função para obter a página atual baseada na URL
+function getPageFromPath(): string {
+  const path = window.location.pathname.toLowerCase();
+  
+  // Verifica se é uma rota de produto (ex: /produtos/123)
+  if (path.startsWith('/produtos/') && path !== '/produtos') {
+    const productId = path.split('/produtos/')[1];
+    if (productId) {
+      return 'product-detail';
+    }
+  }
+  
+  // Retorna a página mapeada ou dashboard por padrão
+  return routeMap[path] || 'dashboard';
+}
+
 export default function App() {
-  // Inicia direto no dashboard por padrão
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  // Função para extrair productId da URL
+  const extractProductIdFromPath = (): string | null => {
+    const path = window.location.pathname.toLowerCase();
+    if (path.startsWith('/produtos/') && path !== '/produtos') {
+      const productId = path.split('/produtos/')[1];
+      return productId || null;
+    }
+    return null;
+  };
+
+  // Inicia com a página baseada na URL atual
+  const [currentPage, setCurrentPage] = useState(() => getPageFromPath());
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editingProductId, setEditingProductId] = useState<string | null>(() => extractProductIdFromPath());
 
-  // Verifica a URL para mostrar login se necessário
+  // Atualiza a URL na primeira carga se necessário
   useEffect(() => {
     const path = window.location.pathname.toLowerCase();
-    if (path === '/login' || path.endsWith('/login')) {
-      setCurrentPage('login');
+    if (path === '/' || path === '') {
+      window.history.replaceState({}, '', '/dashboard');
     }
+  }, []);
+
+  // Sincroniza a URL com mudanças de navegação do navegador (botão voltar/avançar)
+  useEffect(() => {
+    const handlePopState = () => {
+      const page = getPageFromPath();
+      setCurrentPage(page);
+      
+      // Se for produto, extrai o ID da URL
+      const productId = extractProductIdFromPath();
+      setEditingProductId(productId);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   useEffect(() => {
@@ -56,13 +162,21 @@ export default function App() {
 
   const handleLogin = () => {
     setCurrentPage('dashboard');
+    window.history.pushState({}, '', '/dashboard');
   };
 
   const handleNavigate = (page: string, productId?: string) => {
     if (page === 'product-detail' && productId) {
       setEditingProductId(productId);
+      // URL para produto específico: /produtos/123
+      window.history.pushState({}, '', `/produtos/${productId}`);
     } else {
       setEditingProductId(null);
+      // Atualiza a URL baseada na página
+      const route = pageToRoute[page];
+      if (route) {
+        window.history.pushState({}, '', route);
+      }
     }
     setCurrentPage(page);
   };
@@ -70,6 +184,7 @@ export default function App() {
   const handleBackFromProduct = () => {
     setEditingProductId(null);
     setCurrentPage('produtos');
+    window.history.pushState({}, '', '/produtos');
   };
 
   const handleThemeToggle = () => {
